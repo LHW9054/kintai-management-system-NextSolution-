@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>システム設定</title>
+    <link rel="stylesheet" href="/common.css">
+</head>
+
+<body>
+    <div class="page">
+        <div class="topbar">
+            <h1>システム設定</h1><a href="/main.html">← メイン</a>
+        </div>
+        <div class="card">
+            <h2>テスト 時間 設定</h2>
+            <p class="muted">テスト 中は 希望する日付/時間を 固定してテストできます. リリース時に 'システム 時間 使用'へ 切り替えてください.</p>
+            <div class="form-row">
+                <div class="field"><label>テスト 時間</label><input id="dt" type="datetime-local"></div><button
+                    onclick="save(true)">設定 時間 使用</button><button class="secondary" onclick="save(false)">システム 時間
+                    使用</button>
+            </div>
+            <p id="current" class="notice"></p>
+        </div>
+        <div class="card">
+            <h2>基本 勤務 ルール</h2>
+            <p>基本勤務: 09:00 ~ 18:00 / 所定勤務 8時間 / 休憩 1時間</p>
+            <p class="muted">勤務形態別の時間は、既存の勤務形態管理画面で変更できます。</p>
+        </div>
+    </div>
+    <script>
+        const u = JSON.parse(
+            localStorage.getItem('loginUser') || 'null'
+        );
+
+        if (!u || u.role !== 'ADMIN') {
+            alert('システム管理者のみアクセスできます。');
+            location = '/main.html';
+        }
+
+        async function load() {
+            const d = await fetch('/api/system/time')
+                .then(r => r.json());
+
+            dt.value = d.now.slice(0, 16);
+
+            current.textContent = d.fixedEnabled
+                ? '現在：テスト時刻 ' + d.now
+                : '現在：実際のシステム時刻';
+        }
+
+        async function save(enabled) {
+            const v = dt.value;
+
+            if (enabled && !v) {
+                return alert('時刻を選択してください。');
+            }
+
+            const p = new URLSearchParams({
+                dateTime: enabled
+                    ? v
+                    : new Date().toISOString().slice(0, 19),
+                enabled: enabled
+            });
+
+            const d = await fetch(
+                '/api/system/dev-time?' + p,
+                {
+                    method: 'POST'
+                }
+            ).then(r => r.json());
+
+            current.textContent = d.fixedEnabled
+                ? '現在：テスト時刻 ' + d.now
+                : '現在：実際のシステム時刻';
+
+            alert('設定しました。');
+        }
+
+        load();
+    </script>
+</body>
+
+</html>

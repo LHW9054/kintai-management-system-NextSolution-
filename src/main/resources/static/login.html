@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>ログイン</title>
+    <link rel="stylesheet" href="/common.css">
+    <style>
+        body {
+            min-height: 100vh;
+            display: grid;
+            place-items: center
+        }
+
+        .login {
+            width: min(420px, 92vw)
+        }
+
+        .login h1 {
+            margin-top: 0
+        }
+
+        .login button {
+            width: 100%;
+            margin-top: 8px
+        }
+    </style>
+</head>
+
+<body>
+    <div class="login card">
+        <h1>勤怠管理システム</h1>
+        <p class="muted">社員番号とパスワードを入力してください。</p>
+        <form onsubmit="login(event)">
+            <div class="field"><label>社員番号</label><input id="id" required></div><br>
+            <div class="field"><label>パスワード</label><input id="pw" type="password" required minlength="8"></div>
+            <button>ログイン</button>
+        </form>
+    </div>
+    <script>
+        async function login(e) {
+            e.preventDefault();
+
+            const p = new URLSearchParams({
+                username: id.value,
+                password: pw.value
+            });
+
+            const r = await fetch(
+                '/api/login?' + p,
+                {
+                    method: 'POST'
+                }
+            );
+
+            const d = await r.json();
+
+            if (!d.success) {
+                alert(d.message);
+                return;
+            }
+
+            localStorage.setItem(
+                'loginUser',
+                JSON.stringify(d.user)
+            );
+
+            location = '/main.html';
+        }
+    </script>
+</body>
+
+</html>

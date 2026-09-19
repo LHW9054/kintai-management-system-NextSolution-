@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>勤怠管理システム</title>
+    <link rel="stylesheet" href="/common.css">
+</head>
+
+<body>
+    <div class="page">
+        <div class="topbar">
+            <div>
+                <h1>勤怠管理システム</h1>
+            </div>
+            <div><span class="pill" id="role"></span> <span id="name"></span> <button class="danger"
+                    onclick="logout()">ログアウト</button></div>
+        </div>
+        <div class="nav"><a href="/main.html">出退勤</a><a href="/summary.html">勤務照会</a><a href="/leave.html">休暇申請</a><a
+                href="/work-edit.html">勤務修正</a><a id="approval" href="/leave-approval.html" style="display:none">承認
+                管理</a><a id="team" href="/team-status.html" style="display:none">部下状況</a><a id="admin"
+                href="/system-settings.html" style="display:none">システム設定</a></div>
+        <div class="card">
+            <h2 id="today">本日</h2>
+            <div class="grid">
+                <div class="stat"><small>現在 時間</small><strong id="time">--:--</strong></div>
+                <div class="stat"><small>本日 勤務時間</small><strong id="todayWork">0.00 h</strong></div>
+                <div class="stat"><small>今月 勤務日数</small><strong id="monthDays">0 日</strong></div>
+                <div class="stat"><small>勤務 達成</small><strong id="fulfilled">-</strong></div>
+            </div>
+        </div>
+        <div class="card">
+            <h2>出退勤 / 休憩開始</h2>
+            <div class="actions"><button class="success" onclick="act('clock-in')">出勤</button><button class="warning"
+                    onclick="act('rest-start')">休憩開始</button><button onclick="act('rest-end')">休憩終了</button><button
+                    class="danger" onclick="act('clock-out')">退勤</button></div>
+            <p id="status" class="muted"></p>
+        </div>
+    </div>
+    <script>
+        const user = JSON.parse(
+            localStorage.getItem('loginUser') || 'null'
+        );
+
+        if (!user) {
+            location = '/login.html';
+        }
+
+        const uid = user?.userId || user?.user_id;
+
+        const roleNames = {
+            EMPLOYEE: '一般社員',
+            MANAGER: '上司',
+            HR: '人事部',
+            ADMIN: 'システム管理者'
+        };
+
+        document.getElementById('name').textContent =
+            (user?.name || '') + ' 様';
+
+        document.getElementById('role').textContent =
+            roleNames[user?.role] || '';
+
+        if (['MANAGER', 'HR', 'ADMIN'].includes(user?.role)) {
+            document.getElementById('approval').style.display = 'inline-block';
+        }
+
+        if (user?.role === 'MANAGER') {
+            document.getElementById('team').style.display = 'inline-block';
+        }
+
+        if (user?.role === 'ADMIN') {
+            document.getElementById('admin').style.display = 'inline-block';
+        }
+
+        async function load() {
+            const t = await fetch('/api/system/time')
+                .then(r => r.json());
+
+            const d = new Date(t.now);
+
+            document.getElementById('today').textContent =
+                d.toLocaleDateString('ja-JP', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric',
+                    weekday: 'long'
+                });
+
+            document.getElementById('time').textContent =
+                d.toLocaleTimeString('ja-JP', {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit',
+                    hour12: false
+                });
+
+            const s = await fetch(
+                '/api/attendance/today?userId=' + uid
+            ).then(r => r.json());
+
+            document.getElementById('todayWork').textContent =
+                (s.workHours || 0).toFixed(2) + ' h';
+
+            document.getElementById('fulfilled').textContent =
+                s.fulfilled ? '達成' : '未達成';
+
+            const ym =
+                String(d.getFullYear()) +
+                '-' +
+                String(d.getMonth() + 1).padStart(2, '0');
+
+            const m = await fetch(
+                `/api/attendance/monthly-summary?userId=${uid}&yearMonth=${ym}`
+            ).then(r => r.json());
+
+            document.getElementById('monthDays').textContent =
+                (m.workDays || 0) + ' 日';
+        }
+
+        async function act(type) {
+            try {
+                const r = await fetch(
+                    '/api/attendance/' + type + '?userId=' + uid,
+                    {
+                        method: 'POST'
+                    }
+                );
+
+                const text = await r.text();
+
+                if (!r.ok) {
+                    let msg = text;
+
+                    try {
+                        msg = JSON.parse(text).message;
+                    } catch {
+                        // JSON形式ではない場合は元のメッセージを使用
+                    }
+
+                    throw new Error(msg || '処理 失敗');
+                }
+
+                if (type === 'clock-out') {
+                    const d = JSON.parse(text);
+
+                    alert(
+                        d.isFulfilled
+                            ? '退勤 完了! 基本 勤務時間 8時間を 達成しました.'
+                            : '退勤 完了! 基本 勤務時間を 満たしていません.'
+                    );
+                } else {
+                    alert('処理しました.');
+                }
+
+                load();
+            } catch (e) {
+                alert(e.message);
+            }
+        }
+
+        async function logout() {
+            await fetch(
+                '/api/logout?username=' +
+                encodeURIComponent(user.employeeCode || ''),
+                {
+                    method: 'POST'
+                }
+            ).catch(() => {
+                // ログアウトAPIに失敗しても画面上のログアウトは実行
+            });
+
+            localStorage.removeItem('loginUser');
+            location = '/login.html';
+        }
+
+        load();
+        setInterval(load, 1000);
+    </script>
+</body>
+
+</html>

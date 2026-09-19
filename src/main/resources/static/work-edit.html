@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>勤務修正 申請</title>
+    <link rel="stylesheet" href="/common.css">
+</head>
+
+<body>
+    <div class="page">
+        <div class="topbar">
+            <h1>勤務修正 申請</h1><a href="/main.html">← メイン</a>
+        </div>
+        <div class="card">
+            <p class="muted">本人の 勤務記録 IDと 修正する 出退勤 時間を 入力します. 上司 承認 後に反映されます.</p>
+            <div class="form-row">
+                <div class="field"><label>勤務記録 ID</label><input id="aid" type="number"></div>
+                <div class="field"><label>出勤</label><input id="cin" type="datetime-local"></div>
+                <div class="field"><label>退勤</label><input id="cout" type="datetime-local"></div>
+            </div><br>
+            <div class="field"><label>理由</label><textarea id="reason" rows="4"></textarea></div><br><button
+                onclick="submitEdit()">修正 申請</button>
+        </div>
+    </div>
+    <script>
+        const u = JSON.parse(
+            localStorage.getItem('loginUser') || 'null'
+        );
+
+        if (!u) {
+            location = '/login.html';
+        }
+
+        const uid = u?.userId || u?.user_id;
+
+        async function submitEdit() {
+            if (
+                !aid.value ||
+                !cin.value ||
+                !cout.value ||
+                !reason.value.trim()
+            ) {
+                return alert('すべての項目を入力してください。');
+            }
+
+            const p = new URLSearchParams({
+                userId: uid,
+                attendanceId: aid.value,
+                clockIn: cin.value,
+                clockOut: cout.value,
+                reason: reason.value
+            });
+
+            const r = await fetch(
+                '/api/attendance/edit-request?' + p,
+                {
+                    method: 'POST'
+                }
+            );
+
+            const t = await r.text();
+
+            if (!r.ok) {
+                let m = t;
+
+                try {
+                    m = JSON.parse(t).message;
+                } catch {
+                }
+
+                return alert(m);
+            }
+
+            alert('勤務修正申請が完了しました。');
+            reason.value = '';
+        }
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ユーザー管理 (ユーザー 管理)</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Pretendard', Arial, sans-serif;
+        }
+
+        body {
+            background-color: #f4f6f9;
+            padding: 30px;
+        }
+
+        .top-bar {
+            max-width: 1150px;
+            margin: 0 auto 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .top-bar a {
+            color: #1e3a8a;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .container {
+            max-width: 1150px;
+            margin: 0 auto;
+            background: white;
+            padding: 25px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        h2 {
+            color: #0f172a;
+            margin-bottom: 4px;
+        }
+
+        .sub {
+            color: #64748b;
+            font-size: 0.85rem;
+            margin-bottom: 20px;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin-bottom: 20px;
+            align-items: end;
+        }
+
+        .field {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .field label {
+            font-size: 0.78rem;
+            color: #64748b;
+            margin-bottom: 4px;
+        }
+
+        .field input,
+        .field select {
+            padding: 9px;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            font-size: 0.88rem;
+        }
+
+        .btn {
+            padding: 10px 16px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            color: white;
+        }
+
+        .btn-add {
+            background: #1e3a8a;
+            grid-column: span 4;
+            justify-self: start;
+        }
+
+        .btn-edit {
+            background: #f59e0b;
+            padding: 6px 10px;
+            font-size: 0.8rem;
+        }
+
+        .btn-del {
+            background: #ef4444;
+            padding: 6px 10px;
+            font-size: 0.8rem;
+        }
+
+        .btn-save {
+            background: #22c55e;
+            padding: 6px 10px;
+            font-size: 0.8rem;
+        }
+
+        .btn-cancel {
+            background: #94a3b8;
+            padding: 6px 10px;
+            font-size: 0.8rem;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13.5px;
+        }
+
+        th,
+        td {
+            border: 1px solid #e2e8f0;
+            padding: 9px;
+            text-align: center;
+        }
+
+        th {
+            background-color: #0f172a;
+            color: white;
+        }
+
+        tr:nth-child(even) {
+            background: #f8fafc;
+        }
+
+        .actions {
+            display: flex;
+            gap: 6px;
+            justify-content: center;
+        }
+
+        .cell-select,
+        .cell-input {
+            width: 100px;
+            padding: 4px;
+        }
+
+        .role-tag {
+            padding: 3px 8px;
+            border-radius: 10px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .role-EMPLOYEE {
+            background: #e0f2fe;
+            color: #0369a1;
+        }
+
+        .role-MANAGER {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .role-HR {
+            background: #ede9fe;
+            color: #6d28d9;
+        }
+
+        .role-ADMIN {
+            background: #fee2e2;
+            color: #b91c1c;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="top-bar">
+        <a href="/main.html"><i class="fa-solid fa-arrow-left"></i> メインへ</a>
+    </div>
+    <div class="container">
+        <h2>ユーザー管理 (ユーザー 管理)</h2>
+        <div class="sub">全社員のアカウント、所属 部署, 上司, 権限, 勤務形態を登録/管理します.</div>
+
+        <div class="form-grid">
+            <div class="field"><label>社員番号</label><input type="text" id="newEmpCode" placeholder="例： EMP002"></div>
+            <div class="field"><label>氏名</label><input type="text" id="newName" placeholder="氏名"></div>
+            <div class="field"><label>初期 パスワード</label><input type="text" id="newPassword" placeholder="8文字以上"></div>
+            <div class="field"><label>権限</label>
+                <select id="newRole">
+                    <option value="EMPLOYEE">日般社員</option>
+                    <option value="MANAGER">上司</option>
+                    <option value="HR">人事部</option>
+                    <option value="ADMIN">システム 管理者</option>
+                </select>
+            </div>
+            <div class="field"><label>部署</label><select id="newDept"></select></div>
+            <div class="field"><label>上司</label><select id="newManager">
+                    <option value="">なし</option>
+                </select></div>
+            <div class="field"><label>勤務形態</label><select id="newWorkType"></select></div>
+            <button class="btn btn-add" onclick="createUser()"><i class="fa-solid fa-user-plus"></i> ユーザー 追加</button>
+        </div>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>社員番号</th>
+                    <th>氏名</th>
+                    <th>権限</th>
+                    <th>部署</th>
+                    <th>上司</th>
+                    <th>勤務形態</th>
+                    <th>登録日</th>
+                    <th>管理</th>
+                </tr>
+            </thead>
+            <tbody id="userTableBody"></tbody>
+        </table>
+    </div>
+
+    <script>
+        let departments = [];
+        let workTypes = [];
+        let managers = [];
+
+        function checkAdmin() {
+            const userStr = localStorage.getItem('loginUser');
+            if (!userStr) { window.location.href = '/login.html'; return; }
+            const user = JSON.parse(userStr);
+            const role = user.role || '';
+            if (!['ADMIN', 'システム 管理者', '管理者'].includes(role)) {
+                alert('システム 管理者のみ アクセスできます.');
+                window.location.href = '/main.html';
+            }
+        }
+
+        function roleLabel(role) {
+            return { EMPLOYEE: '日般社員', MANAGER: '上司', HR: '人事部', ADMIN: 'システム 管理者' }[role] || role;
+        }
+
+        function optionsHtml(list, valueKey, labelFn, selected) {
+            return list.map(item => `<option value="${item[valueKey]}" ${item[valueKey] == selected ? 'selected' : ''}>${labelFn(item)}</option>`).join('');
+        }
+
+        function loadDropdownData(callback) {
+            Promise.all([
+                fetch('/api/departments').then(r => r.json()),
+                fetch('/api/worktypes').then(r => r.json()),
+                fetch('/api/users/managers').then(r => r.json())
+            ]).then(([depts, wts, mgrs]) => {
+                departments = depts;
+                workTypes = wts;
+                managers = mgrs;
+
+                document.getElementById('newDept').innerHTML = optionsHtml(departments, 'deptId', d => d.deptName);
+                document.getElementById('newWorkType').innerHTML = optionsHtml(workTypes, 'workTypeId', w => w.typeName);
+                document.getElementById('newManager').innerHTML += optionsHtml(managers, 'user_id', m => `${m.name} (${roleLabel(m.role)})`);
+
+                if (callback) callback();
+            });
+        }
+
+        function loadUsers() {
+            fetch('/api/users')
+                .then(res => res.json())
+                .then(data => {
+                    const tbody = document.getElementById('userTableBody');
+                    tbody.innerHTML = '';
+                    if (!data || data.length === 0) {
+                        tbody.innerHTML = '<tr><td colspan="9">登録済みの ユーザーがありません.</td></tr>';
+                        return;
+                    }
+                    data.forEach(u => {
+                        const tr = document.createElement('tr');
+                        tr.id = `user-row-${u.user_id}`;
+                        tr.dataset.name = u.name;
+                        tr.dataset.role = u.role;
+                        tr.dataset.deptId = u.dept_id || '';
+                        tr.dataset.managerId = u.manager_id || '';
+                        tr.dataset.workTypeId = u.work_type_id || '';
+                        tr.innerHTML = `
+                            <td>${u.user_id}</td>
+                            <td>${u.employee_code}</td>
+                            <td class="c-name">${u.name}</td>
+                            <td class="c-role"><span class="role-tag role-${u.role}">${roleLabel(u.role)}</span></td>
+                            <td class="c-dept">${u.dept_name || '-'}</td>
+                            <td class="c-manager">${u.manager_name || '-'}</td>
+                            <td class="c-worktype">${u.work_type_name || '-'}</td>
+                            <td>${u.created_at ? String(u.created_at).substring(0, 10) : '-'}</td>
+                            <td class="actions">
+                                <button class="btn btn-edit" onclick="startEdit(${u.user_id})"><i class="fa-solid fa-pen"></i></button>
+                                <button class="btn btn-del" onclick="deleteUser(${u.user_id})"><i class="fa-solid fa-trash"></i></button>
+                            </td>
+                        `;
+                        tbody.appendChild(tr);
+                    });
+                });
+        }
+
+        function createUser() {
+            const empCode = document.getElementById('newEmpCode').value.trim();
+            const name = document.getElementById('newName').value.trim();
+            const password = document.getElementById('newPassword').value.trim();
+            const role = document.getElementById('newRole').value;
+            const deptId = document.getElementById('newDept').value;
+            const managerId = document.getElementById('newManager').value;
+            const workTypeId = document.getElementById('newWorkType').value;
+
+            if (!empCode || !name || !password) { alert('社員番号, 氏名, 初期 パスワードは 必須です.'); return; }
+            if (password.length < 8) { alert('パスワードは 8文字以上がである必要が します.'); return; }
+
+            const params = new URLSearchParams({ employeeCode: empCode, name, password, role });
+            if (deptId) params.append('deptId', deptId);
+            if (managerId) params.append('managerId', managerId);
+            if (workTypeId) params.append('workTypeId', workTypeId);
+
+            fetch(`/api/users?${params.toString()}`, { method: 'POST' })
+                .then(res => { if (!res.ok) throw new Error(); return res.json(); })
+                .then(() => {
+                    document.getElementById('newEmpCode').value = '';
+                    document.getElementById('newName').value = '';
+                    document.getElementById('newPassword').value = '';
+                    loadUsers();
+                    loadDropdownData();
+                })
+                .catch(() => alert('ユーザー 追加に 失敗しました. 社員番号が 重複していないか確認してください.'));
+        }
+
+        function startEdit(userId) {
+            const row = document.getElementById(`user-row-${userId}`);
+            row.querySelector('.c-name').innerHTML = `<input class="cell-input" id="e-name-${userId}" value="${row.dataset.name}">`;
+            row.querySelector('.c-role').innerHTML = `<select class="cell-select" id="e-role-${userId}">
+                ${['EMPLOYEE', 'MANAGER', 'HR', 'ADMIN'].map(r => `<option value="${r}" ${r === row.dataset.role ? 'selected' : ''}>${roleLabel(r)}</option>`).join('')}
+            </select>`;
+            row.querySelector('.c-dept').innerHTML = `<select class="cell-select" id="e-dept-${userId}">${optionsHtml(departments, 'deptId', d => d.deptName, row.dataset.deptId)}</select>`;
+            row.querySelector('.c-manager').innerHTML = `<select class="cell-select" id="e-manager-${userId}"><option value="">なし</option>${optionsHtml(managers, 'user_id', m => m.name, row.dataset.managerId)}</select>`;
+            row.querySelector('.c-worktype').innerHTML = `<select class="cell-select" id="e-worktype-${userId}">${optionsHtml(workTypes, 'workTypeId', w => w.typeName, row.dataset.workTypeId)}</select>`;
+            row.querySelector('.actions').innerHTML = `
+                <button class="btn btn-save" onclick="saveEdit(${userId})"><i class="fa-solid fa-check"></i></button>
+                <button class="btn btn-cancel" onclick="loadUsers()"><i class="fa-solid fa-xmark"></i></button>
+            `;
+        }
+
+        function saveEdit(userId) {
+            const name = document.getElementById(`e-name-${userId}`).value.trim();
+            const role = document.getElementById(`e-role-${userId}`).value;
+            const deptId = document.getElementById(`e-dept-${userId}`).value;
+            const managerId = document.getElementById(`e-manager-${userId}`).value;
+            const workTypeId = document.getElementById(`e-worktype-${userId}`).value;
+            if (!name) { alert('氏名を 入力してください.'); return; }
+
+            const params = new URLSearchParams({ name, role });
+            if (deptId) params.append('deptId', deptId);
+            if (managerId) params.append('managerId', managerId);
+            if (workTypeId) params.append('workTypeId', workTypeId);
+
+            fetch(`/api/users/${userId}?${params.toString()}`, { method: 'PUT' })
+                .then(res => { if (!res.ok) throw new Error(); return res.json(); })
+                .then(() => loadUsers())
+                .catch(() => alert('ユーザー 修正に 失敗しました.'));
+        }
+
+        function deleteUser(userId) {
+            if (!confirm('このユーザーを 削除しますか?')) return;
+            fetch(`/api/users/${userId}`, { method: 'DELETE' })
+                .then(res => { if (!res.ok) throw new Error(); return res.text(); })
+                .then(() => loadUsers())
+                .catch(() => alert('削除に 失敗しました. その ユーザーが 他のデータ(勤務記録 など)と関連していないか確認してください.'));
+        }
+
+        checkAdmin();
+        loadDropdownData(loadUsers);
+    </script>
+</body>
+
+</html>
