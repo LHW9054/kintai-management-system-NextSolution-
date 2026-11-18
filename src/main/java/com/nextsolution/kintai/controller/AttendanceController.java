@@ -21,6 +21,7 @@ public class AttendanceController {
     @PostMapping("/rest-end") public Attendance restEnd(@RequestParam Long userId){return service.restEnd(userId);}
     @GetMapping("/today") public Map<String,Object> today(@RequestParam Long userId){return service.getTodayStatus(userId);}
     @GetMapping("/monthly-summary") public MonthlySummaryDto monthly(@RequestParam Long userId,@RequestParam String yearMonth){return service.getMonthlySummary(userId,yearMonth);}
+    @GetMapping("/monthly-records") public List<Attendance> monthlyRecords(@RequestParam Long userId,@RequestParam String yearMonth){return service.getMonthlyRecords(userId,yearMonth);}
 
     @PostMapping("/edit-request")
     public WorkEditRequest edit(@RequestParam Long userId,@RequestParam Long attendanceId,@RequestParam String clockIn,@RequestParam String clockOut,@RequestParam String reason){

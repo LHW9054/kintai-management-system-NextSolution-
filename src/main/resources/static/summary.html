@@ -1,69 +1,89 @@
 <!DOCTYPE html>
 <html lang="ja">
-
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width,initial-scale=1">
-    <title>勤務照会</title>
-    <link rel="stylesheet" href="/common.css">
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>勤務カレンダー | NextSolution</title><link rel="stylesheet" href="/common.css">
 </head>
-
 <body>
-    <div class="page">
-        <div class="topbar">
-            <h1>勤務照会</h1><a href="/main.html">← メイン</a>
-        </div>
-        <div class="card">
-            <div class="form-row">
-                <div class="field"><label>照会 月</label><input type="month" id="ym"></div><button
-                    onclick="load()">照会</button>
-            </div>
-        </div>
-        <div class="grid">
-            <div class="stat"><small>総勤務時間</small><strong id="work">0h</strong></div>
-            <div class="stat"><small>勤務日数</small><strong id="days">0日</strong></div>
-            <div class="stat"><small>残業</small><strong id="ot">0h</strong></div>
-            <div class="stat"><small>深夜</small><strong id="night">0h</strong></div>
-            <div class="stat"><small>遅刻</small><strong id="late">0回</strong></div>
-            <div class="stat"><small>休暇 使用</small><strong id="leave">0日</strong></div>
-        </div>
+<div class="page">
+  <div class="topbar"><div><div class="pill">WORKSPACE / ATTENDANCE</div><h1 style="margin-top:9px">勤務カレンダー</h1><p class="muted" style="margin:5px 0 0">出勤・退勤・休憩の記録を、月ごとにチェック。</p></div><a href="/main.html">← メイン画面へ</a></div>
+  <div class="nav"><a href="/main.html">出退勤</a><a href="/summary.html">勤務カレンダー</a><a href="/leave.html">休暇申請</a><a href="/work-edit.html">勤務修正</a></div>
+  <div class="grid" style="margin-bottom:20px">
+    <div class="stat"><small>今月の勤務時間</small><strong id="work">0h</strong></div>
+    <div class="stat"><small>出勤日数</small><strong id="days">0日</strong></div>
+    <div class="stat"><small>残業時間</small><strong id="ot">0h</strong></div>
+    <div class="stat"><small>深夜勤務</small><strong id="night">0h</strong></div>
+    <div class="stat"><small>遅刻</small><strong id="late">0回</strong></div>
+    <div class="stat"><small>休暇使用</small><strong id="leave">0日</strong></div>
+  </div>
+  <div class="card">
+    <div class="calendar-head">
+      <div><div class="calendar-title" id="monthTitle">勤務記録</div><div class="muted" style="font-size:13px">日付を見ながら勤務実績を確認できます</div></div>
+      <div class="form-row"><button class="secondary" onclick="shiftMonth(-1)">‹ 前月</button><div class="field"><label for="ym">対象月</label><input type="month" id="ym" onchange="load()"></div><button class="secondary" onclick="shiftMonth(1)">次月 ›</button></div>
     </div>
-    <script>
-        const u = JSON.parse(
-            localStorage.getItem('loginUser') || 'null'
-        );
-
-        if (!u) {
-            location = '/login.html';
-        }
-
-        const uid = u?.userId || u?.user_id;
-
-        fetch('/api/system/time')
-            .then(r => r.json())
-            .then(t => {
-                const d = new Date(t.now);
-
-                ym.value =
-                    `${d.getFullYear()}-` +
-                    `${String(d.getMonth() + 1).padStart(2, '0')}`;
-
-                load();
-            });
-
-        async function load() {
-            const d = await fetch(
-                `/api/attendance/monthly-summary?userId=${uid}&yearMonth=${ym.value}`
-            ).then(r => r.json());
-
-            work.textContent = d.totalWorkHours + 'h';
-            days.textContent = d.workDays + '日';
-            ot.textContent = d.totalOvertime + 'h';
-            night.textContent = d.totalNightHours + 'h';
-            late.textContent = d.lateCount + '回';
-            leave.textContent = d.leaveDays + '日';
-        }
-    </script>
-</body>
-
-</html>
+    <div class="calendar-legend">
+      <span class="legend-item"><i class="legend-dot" style="background:#13a985"></i>勤務時間</span>
+      <span class="legend-item"><i class="legend-dot" style="background:#f3a738"></i>休憩時間</span>
+      <span class="legend-item"><i class="legend-dot" style="background:#7668f2"></i>出勤・退勤</span>
+      <span class="legend-item"><i class="legend-dot" style="background:#dfe1ed"></i>記録なし</span>
+    </div>
+    <div class="calendar" id="calendar"></div>
+    <p class="calendar-note">※ 記録がある日には出勤・退勤時刻、休憩時間、勤務時間が表示されます。</p>
+  </div>
+</div>
+<script>
+const u=JSON.parse(localStorage.getItem('loginUser')||'null');
+if(!u) location='/login.html';
+const uid=u?.userId||u?.user_id;
+const $=id=>document.getElementById(id);
+const weekdays=['日','月','火','水','木','金','土'];
+async function init(){
+ try{
+  const t=await fetch('/api/system/time').then(r=>r.json());
+  const d=new Date(t.now);
+  $('ym').value=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+ }catch{
+  const d=new Date();$('ym').value=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+ }
+ load();
+}
+function shiftMonth(delta){const [y,m]=$('ym').value.split('-').map(Number);const d=new Date(y,m-1+delta,1);$('ym').value=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;load()}
+function time(v){if(!v)return '--:--';const d=new Date(v);return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`}
+function chip(text,cls){return `<span class="day-chip ${cls}">${text}</span>`}
+async function load(){
+ if(!$('ym').value)return;
+ const [summaryRes,recordsRes]=await Promise.all([
+  fetch(`/api/attendance/monthly-summary?userId=${uid}&yearMonth=${$('ym').value}`),
+  fetch(`/api/attendance/monthly-records?userId=${uid}&yearMonth=${$('ym').value}`)
+ ]);
+ if(!summaryRes.ok||!recordsRes.ok){$('calendar').innerHTML='<p class="error">勤務データを読み込めませんでした。</p>';return}
+ const d=await summaryRes.json(),records=await recordsRes.json();
+ $('work').textContent=(d.totalWorkHours??0)+'h';$('days').textContent=(d.workDays??0)+'日';
+ $('ot').textContent=(d.totalOvertime??0)+'h';$('night').textContent=(d.totalNightHours??0)+'h';
+ $('late').textContent=(d.lateCount??0)+'回';$('leave').textContent=(d.leaveDays??0)+'日';
+ const [year,month]=$('ym').value.split('-').map(Number);
+ $('monthTitle').textContent=`${year}年 ${month}月`;
+ const byDay={};records.forEach(r=>{byDay[String(r.workDate).slice(0,10)]=r});
+ const first=new Date(year,month-1,1).getDay(),count=new Date(year,month,0).getDate();
+ const today=new Date();const isCurrent=today.getFullYear()===year&&today.getMonth()+1===month;
+ let html=weekdays.map(w=>`<div class="calendar-weekday">${w}</div>`).join('');
+ for(let i=0;i<first;i++)html+='<div class="calendar-day empty"></div>';
+ for(let day=1;day<=count;day++){
+  const key=`${year}-${String(month).padStart(2,'0')}-${String(day).padStart(2,'0')}`,r=byDay[key];
+  const todayClass=isCurrent&&today.getDate()===day?' today':'';
+  html+=`<div class="calendar-day${todayClass}"><div class="day-number">${day}${isCurrent&&today.getDate()===day?'<span class="today-label">TODAY</span>':''}</div>`;
+  if(r){
+   html+=chip(`出勤 ${time(r.clockIn)}`,'chip-neutral');
+   if(r.breakStart)html+=chip(`休憩 ${time(r.breakStart)}${r.breakEnd?'–'+time(r.breakEnd):'〜'}`,'chip-break');
+   if(r.clockOut)html+=chip(`退勤 ${time(r.clockOut)}`,'chip-neutral');
+   if(r.totalWorkHours!=null&&r.clockOut)html+=chip(`勤務 ${Number(r.totalWorkHours).toFixed(2)}h`,'chip-work');
+   else if(r.clockIn&&!r.clockOut)html+=chip('勤務中','chip-work');
+  }else{html+=chip('記録なし','chip-off')}
+  html+='</div>';
+ }
+ for(let i=(first+count)%7;i!==0&&i<7;i++)html+='<div class="calendar-day empty"></div>';
+ $('calendar').innerHTML=html;
+}
+init();
+</script>
+</body></html>

@@ -4,17 +4,6 @@ target/
 !**/src/main/**/target/
 !**/src/test/**/target/
 
-### Local / private files ###
-.DS_Store
-.env
-*.local
-src/main/resources/application-local.properties
-
-### Presentation materials ###
-DEVELOPMENT_GUIDE.md
-勤怠管理システム_リリースチェックリスト.xlsx
-発表用_プロジェクト説明.md
-
 ### STS ###
 .apt_generated
 .classpath
@@ -42,3 +31,34 @@ build/
 
 ### VS Code ###
 .vscode/
+
+# ===== 보안 / 로컬 전용 (추가) =====
+application-local.properties
+local.properties
+db.properties
+secret.properties
+*.pem
+*.key
+.env
+Wallet_*/
+
+# ===== 빌드 / IDE / OS =====
+target/
+build/
+bin/
+out/
+.gradle/
+.metadata/
+.settings/
+.idea/
+*.iml
+*.class
+logs/
+*.log
+*.pid
+.DS_Store
+*.zip
+*.jar
+!gradle/wrapper/gradle-wrapper.jar
+!.mvn/wrapper/maven-wrapper.jar
+libs/

@@ -175,6 +175,11 @@ public class AttendanceService {
         return result;
     }
 
+    public List<Attendance> getMonthlyRecords(Long userId, String yearMonth) {
+        YearMonth ym = YearMonth.parse(yearMonth);
+        return attendanceRepository.findByUserIdAndWorkDateBetween(userId, ym.atDay(1), ym.atEndOfMonth());
+    }
+
     public MonthlySummaryDto getMonthlySummary(Long userId, String yearMonth) {
         YearMonth ym = YearMonth.parse(yearMonth);
         List<Attendance> records = attendanceRepository.findByUserIdAndWorkDateBetween(userId, ym.atDay(1),
